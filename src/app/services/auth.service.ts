@@ -35,34 +35,37 @@ export class AuthService {
   }
 
   async login(email: string, password: string): Promise<boolean> {
-    const isLoginSuccess = await this.checkUserCredentials(email, password);
-
-    if (isLoginSuccess) {
-      localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('userEmail', email);
-      this.isLoggedInSubject.next(true);
-      this.authTokenSubject.next(email);
-      return true;
-    }
-    return false;
+    return await this.checkUserCredentials(email, password).then( isSuccessful => {
+      if (isSuccessful) {
+        localStorage.setItem('isLoggedIn', 'true');
+        localStorage.setItem('authToken', email); // Using email as a simple token
+        this.isLoggedInSubject.next(true);
+        this.authTokenSubject.next(email);
+        return true;
+      }
+      return false;
+    })
   }
 
   logout(): boolean {
     this.isLoggedInSubject.next(false);
     this.authTokenSubject.next('');
     localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userEmail');
+    localStorage.removeItem('authToken');
     
     return true;
   }
 
   async checkUserCredentials(email: string, password: string): Promise<boolean> {
     const res = await fetch(`${this.url}?email=${email}&password=${password}`);
-    const data = await res.json();
 
-    if (data && data.length > 0) {
-      return true;
-    }
-    return false;
+    const isSuccess = await res.json().then(data => {
+      if (data.length > 0 && data[0].email === email && data[0].password === password) {      
+        return true;
+      }
+      return false;
+    })
+
+    return isSuccess;
   }
 }

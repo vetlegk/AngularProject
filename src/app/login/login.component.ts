@@ -20,7 +20,10 @@ import { Router } from '@angular/router';
           <input id="email" type="email" formControlName="email" placeholder="Email:" />
           <input id="password" type="password" formControlName="password" placeholder="Password:" />
 
-          <button class="primary" type="submit">Log In</button>
+          <div class="button-group">
+            <button class="primary" type="submit">Log In</button>
+            <button class="primary" type="submit">Register</button>
+          </div>
         </form>
       </section>
     </main>
