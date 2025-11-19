@@ -30,8 +30,10 @@ import { Router } from '@angular/router';
   styleUrls: ['./login.component.css']
 })
 export class LoginComponent {
-  authService: AuthService = new AuthService();
+  authService: AuthService = inject(AuthService);
   router = inject(Router);
+
+  isLoggedIn$ = this.authService.isLoggedIn$;
 
   email = new FormControl('');
   password = new FormControl('');
@@ -41,21 +43,21 @@ export class LoginComponent {
   });
 
   constructor() { 
-    if (this.authService.isAuthenticated()) {
-      this.router.navigate(['/home']);
-    }
+    this.authService.isLoggedIn$.subscribe(isLoggedIn => {
+      if (isLoggedIn) {
+        this.router.navigate(['/homes']);
+      }
+    }).unsubscribe();
   }
 
-  submitLogin() {
+  async submitLogin() {
     const email = this.loginForm.get('email')?.value || '';
     const password = this.loginForm.get('password')?.value || '';
 
-    this.authService.login(email, password).then((success) => {
-      if (!success) {
-        this.loginForm.reset();
-      } else {
-        this.router.navigate(['']);
-      }
-    })
+    const success = await this.authService.login(email, password);
+
+    if (success) {
+      this.router.navigate(['/homes']);
+    }
   }
 }

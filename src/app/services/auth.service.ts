@@ -1,33 +1,43 @@
 import { inject, Injectable } from '@angular/core';
 import { User } from '../interfaces/user';
 import { Router } from '@angular/router';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 
 export class AuthService {
-  private isLoggedIn = false;
-  private user: User | null = null;
+
+  private isLoggedInSubject = new BehaviorSubject<boolean>(false);
+  private userEmailSubject = new BehaviorSubject<string>('');
+
+  isLoggedIn$ = this.isLoggedInSubject.asObservable();
+  userEmail$ = this.userEmailSubject.asObservable();
+
   private url = "http://localhost:3000/users";
   router = inject(Router);
 
   constructor() { 
-    this.isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      this.user = JSON.parse(storedUser);
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    this.isLoggedInSubject.next(isLoggedIn);
+
+    const storedEmail = localStorage.getItem('userEmail');
+
+    if (storedEmail && storedEmail !== '') {
+      this.userEmailSubject.next(storedEmail);
+      return;
     }
   }
 
   async login(email: string, password: string): Promise<boolean> {
-    const user = await this.getUserFromDb(email, password);
+    const isLoginSuccess = await this.checkUserCredentials(email, password);
 
-    if (user) {
+    if (isLoginSuccess) {
       localStorage.setItem('isLoggedIn', 'true');
-      localStorage.setItem('user', JSON.stringify(user[0]));
-      this.isLoggedIn = true;
-      this.user = user[0];
+      localStorage.setItem('userEmail', email);
+      this.isLoggedInSubject.next(true);
+      this.userEmailSubject.next(email);
       return true;
     }
 
@@ -36,26 +46,21 @@ export class AuthService {
   }
 
   logout(): boolean {
+    this.isLoggedInSubject.next(false);
+    this.userEmailSubject.next('');
     localStorage.removeItem('isLoggedIn');
-    this.isLoggedIn = false;
-    this.user = null;
+    localStorage.removeItem('userEmail');
     
     return true;
   }
 
-  isAuthenticated(): boolean {
-    return this.isLoggedIn || localStorage.getItem('isLoggedIn') === 'true';
-  }
+  async checkUserCredentials(email: string, password: string): Promise<boolean> {
+    const res = await fetch(`${this.url}?email=${email}&password=${password}`);
+    const data = await res.json();
 
-  async getUserFromDb(email: string, password: string): Promise<User[] | null> {
-    const user = (await fetch(`${this.url}?email=${email}&password=${password}`)).json();
-    return await user ?? null;
-  }
-
-  getUser(): User | null {
-    if (this.user || localStorage.getItem('user')) {
-      return this.user || JSON.parse(localStorage.getItem('user')!);
+    if (data && data.length > 0) {
+      return true;
     }
-    return null;
-  } 
+    return false;
+  }
 }

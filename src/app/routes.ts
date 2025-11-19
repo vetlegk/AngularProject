@@ -5,7 +5,7 @@ import { LoginComponent } from './login/login.component';
 
 const routeConfig: Routes = [
     {
-        path: '',
+        path: 'homes',
         component: HomeComponent,
         title: 'Home Page'
     },
@@ -15,7 +15,7 @@ const routeConfig: Routes = [
         title: 'Details Page '
     },
     {
-        path: 'login',
+        path: '',
         component: LoginComponent,
         title: 'Login Page'
     }

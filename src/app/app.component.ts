@@ -10,11 +10,11 @@ import { CommonModule } from '@angular/common';
   selector: 'app-root',
   template: `
     <main>
-      <header>
+      <header *ngIf="isLoggedIn$ | async">
           <img class="logo" src="assets/logo.svg" alt="logo" />
-          <p *ngIf="isLoggedIn">Logged in as: {{userEmail}}</p>
-          <button type="button" class="primary" (click)="logout()" *ngIf="isLoggedIn">Logout</button>
-          <button type="button" class="primary" (click)="login()" *ngIf="!isLoggedIn">Login</button>
+          <p *ngIf="userEmail$ | async as userEmail" class="alert-text">Logged in as: {{userEmail}}</p>
+          <p *ngIf="showAlert">{{alertText}}</p>
+          <button type="button" class="primary" (click)="logout()">Logout</button>
       </header>
 
       <section class="content">
@@ -29,24 +29,41 @@ import { CommonModule } from '@angular/common';
 export class AppComponent {
   authService: AuthService = inject(AuthService);
   router = inject(Router);
+
   title = 'homes';
+  showAlert = false;
+  alertText = '';
 
-  get isLoggedIn(): boolean {
-    return this.authService.isAuthenticated();
-  }
+  isLoggedIn$ = this.authService.isLoggedIn$
+  userEmail$ = this.authService.userEmail$
 
-  get userEmail(): string {
-    const user = this.authService.getUser();
-    return user?.email || 'fail';
-  }
+  constructor() {};
 
   logout() {
     if (this.authService.logout()) {
-      this.router.navigate(['/login']);
-    }
+      this.router.navigate([''])
+    };
   }
 
   login() {
-    this.router.navigate(['/login']);
+    if (this.isLoggedIn$) {
+      this.setAlert('');
+      this.router.navigate(['/homes']);
+
+    } else {
+      this.setAlert('Please log in to continue.')
+      this.router.navigate(['']);
+    }
+  }
+
+  setAlert(message: string) {
+    if (message != '') {
+      this.alertText = message;
+      this.showAlert = true;
+      return;
+    } 
+
+    this.alertText
+    this.showAlert = false;
   }
 }
