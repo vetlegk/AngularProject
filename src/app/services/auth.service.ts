@@ -10,10 +10,10 @@ import { BehaviorSubject, Observable } from 'rxjs';
 export class AuthService {
 
   private isLoggedInSubject = new BehaviorSubject<boolean>(false);
-  private userEmailSubject = new BehaviorSubject<string>('');
+  private authTokenSubject = new BehaviorSubject<string>('');
 
   isLoggedIn$ = this.isLoggedInSubject.asObservable();
-  userEmail$ = this.userEmailSubject.asObservable();
+  authToken$ = this.authTokenSubject.asObservable();
 
   private url = "http://localhost:3000/users";
   router = inject(Router);
@@ -22,12 +22,14 @@ export class AuthService {
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
     this.isLoggedInSubject.next(isLoggedIn);
 
-    const storedEmail = localStorage.getItem('userEmail');
+    const storedToken = localStorage.getItem('authToken');
 
-    if (storedEmail && storedEmail !== '') {
-      this.userEmailSubject.next(storedEmail);
+    if (storedToken && storedToken !== '') {
+      this.authTokenSubject.next(storedToken);
       return;
     }
+
+    localStorage.setItem('authToken', '');
   }
 
   async login(email: string, password: string): Promise<boolean> {
@@ -37,17 +39,15 @@ export class AuthService {
       localStorage.setItem('isLoggedIn', 'true');
       localStorage.setItem('userEmail', email);
       this.isLoggedInSubject.next(true);
-      this.userEmailSubject.next(email);
+      this.authTokenSubject.next(email);
       return true;
     }
-
-    alert('Invalid email or password');
     return false;
   }
 
   logout(): boolean {
     this.isLoggedInSubject.next(false);
-    this.userEmailSubject.next('');
+    this.authTokenSubject.next('');
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userEmail');
     

@@ -33,8 +33,6 @@ export class LoginComponent {
   authService: AuthService = inject(AuthService);
   router = inject(Router);
 
-  isLoggedIn$ = this.authService.isLoggedIn$;
-
   email = new FormControl('');
   password = new FormControl('');
   loginForm = new FormGroup({
@@ -53,11 +51,12 @@ export class LoginComponent {
   async submitLogin() {
     const email = this.loginForm.get('email')?.value || '';
     const password = this.loginForm.get('password')?.value || '';
-
     const success = await this.authService.login(email, password);
 
     if (success) {
       this.router.navigate(['/homes']);
+      return;
     }
+    alert('Login failed: Invalid email or password.');
   }
 }

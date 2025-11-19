@@ -12,7 +12,7 @@ import { CommonModule } from '@angular/common';
     <main>
       <header *ngIf="isLoggedIn$ | async">
           <img class="logo" src="assets/logo.svg" alt="logo" />
-          <p *ngIf="userEmail$ | async as userEmail" class="alert-text">Logged in as: {{userEmail}}</p>
+          <p *ngIf="authToken$ | async as userEmail" class="alert-text">Logged in as: {{userEmail}}</p>
           <p *ngIf="showAlert">{{alertText}}</p>
           <button type="button" class="primary" (click)="logout()">Logout</button>
       </header>
@@ -35,7 +35,7 @@ export class AppComponent {
   alertText = '';
 
   isLoggedIn$ = this.authService.isLoggedIn$
-  userEmail$ = this.authService.userEmail$
+  authToken$ = this.authService.authToken$
 
   constructor() {};
 
