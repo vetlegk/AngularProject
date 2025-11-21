@@ -1,5 +1,4 @@
 import { inject, Injectable } from '@angular/core';
-import { User } from '../interfaces/user';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
 
@@ -56,16 +55,30 @@ export class AuthService {
     return true;
   }
 
+  async register(email: string, password: string): Promise<boolean> {
+    const id = crypto.randomUUID();
+    const res = await fetch(this.url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ id, email, password })
+    });
+    
+    if (res.ok) {
+      return this.login(email, password);
+    }
+    return false;
+  }
+
   async checkUserCredentials(email: string, password: string): Promise<boolean> {
     const res = await fetch(`${this.url}?email=${email}&password=${password}`);
 
-    const isSuccess = await res.json().then(data => {
+    return await res.json().then(data => {
       if (data.length > 0 && data[0].email === email && data[0].password === password) {      
         return true;
       }
       return false;
-    })
-
-    return isSuccess;
+    });
   }
 }
