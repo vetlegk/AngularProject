@@ -41,12 +41,13 @@ export class LoginFormComponent {
   async submitLogin() {
     const email = this.loginForm.get('email')?.value || '';
     const password = this.loginForm.get('password')?.value || '';
-    await this.authService.login(email, password).then(isSuccessful => {
-      if (isSuccessful) {
+
+    const isSuccessful = await this.authService.login(email, password);
+
+    if (isSuccessful) {
       this.router.navigate(['/homes']);
       return;
     }
-    } );
 
     this.loginForm.reset();
     alert('Login failed: Invalid email or password.');

@@ -8,9 +8,9 @@ import { CommonModule } from '@angular/common';
   selector: 'app-root',
   template: `
     <main>
-      <header *ngIf="isLoggedIn$ | async">
+      <header *ngIf="authService.isLoggedIn$ | async">
           <img class="logo" src="assets/logo.svg" alt="logo" />
-          <p *ngIf="authToken$ | async" class="alert-text">Logged in as: {{authToken$}}</p>
+          <p *ngIf="authService.userData$ | async as userData" class="alert-text">Logged in as: {{userData.email}}</p>
           <p *ngIf="showAlert">{{alertText}}</p>
           <button type="button" class="primary" (click)="logout()">Logout</button>
       </header>
@@ -30,9 +30,6 @@ export class AppComponent {
 
   showAlert = false;
   alertText = '';
-
-  isLoggedIn$ = this.authService.isLoggedIn$
-  authToken$ = this.authService.authToken$
 
   constructor() {}
 

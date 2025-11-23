@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
+import { User } from '../interfaces/user';
 
 @Injectable({
   providedIn: 'root'
@@ -8,10 +9,10 @@ import { BehaviorSubject, Observable } from 'rxjs';
 
 export class AuthService {
   private isLoggedInSubject = new BehaviorSubject<boolean>(false);
-  private authTokenSubject = new BehaviorSubject<string>('');
+  private userDataSubject = new BehaviorSubject<User | null>(null);
 
   isLoggedIn$ = this.isLoggedInSubject.asObservable();
-  authToken$ = this.authTokenSubject.asObservable();
+  userData$ = this.userDataSubject.asObservable();
 
   private url = "http://localhost:3000/users";
   router = inject(Router);
@@ -21,35 +22,41 @@ export class AuthService {
     if (isLoggedIn) {
       this.isLoggedInSubject.next(isLoggedIn);
 
-      const storedToken = localStorage.getItem('authToken');
-      if (storedToken && storedToken !== '') {
-        this.authTokenSubject.next(storedToken);
+      const storedUserData = localStorage.getItem('userData');
+      if (storedUserData && storedUserData !== '') {
+        try {
+          const data = JSON.parse(storedUserData);
+          this.userDataSubject.next(data);
+
+        } catch (error) {
+          console.error("\nFailed to parse user data from local storage.\n")
+        }
       }
       return;
     }
 
     localStorage.setItem('isLoggedIn', 'false');
-    localStorage.setItem('authToken', ''); 
+    localStorage.setItem('userData', ''); 
   }
 
   async login(email: string, password: string): Promise<boolean> {
-    return await this.checkUserCredentials(email, password).then(value => {
-      if (value != null) {
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('authToken', value);
-        this.isLoggedInSubject.next(true);
-        this.authTokenSubject.next(value);
-        return true;
-      }
-      return false;
-    })
+    const userData =  await this.checkUserCredentials(email, password)
+
+    if (userData) {
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('userData', JSON.stringify(userData));
+      this.isLoggedInSubject.next(true);
+      this.userDataSubject.next(userData)
+      return true;
+    }
+    return false;
   }
 
   logout(): boolean {
     this.isLoggedInSubject.next(false);
-    this.authTokenSubject.next('');
+    this.userDataSubject.next(null);
     localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('authToken');
+    localStorage.removeItem('userData');
     
     return true;
   }
@@ -57,28 +64,45 @@ export class AuthService {
   async register(email: string, password: string): Promise<boolean> {
     const id = crypto.randomUUID(); // This will practically always return a unique number.
 
-    const res = await fetch(this.url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ id, email, password })
-    });
-    
-    if (res.ok) {
+    try {
+      const res = await fetch(this.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ id, email, password })
+      });
+      
+      if (!res.ok) {
+        throw new Error(`Error rgistering new user: ${res.status}`);
+      };
+
       return this.login(email, password) ?? false;
-    };
-    return false;
+
+    } catch (error) {
+      console.log("Error when regisering new user: ", error);
+      return false;
+    }
   }
 
-  async checkUserCredentials(email: string, password: string): Promise<string | null> {
-    const res = await fetch(`${this.url}?email=${email}&password=${password}`);
+  async checkUserCredentials(email: string, password: string): Promise<{id: string, email: string} | null> {
+    try {
+      const res = await fetch(`${this.url}?email=${email}&password=${password}`);
 
-    return await res.json().then(data => {
-      if (data.length > 0 && data[0].email === email && data[0].password === password) {      
-        return data.id;
+      if (!res.ok) {
+        throw new Error(`Error fetcing from database: ${res.status}`);
       }
+
+      const data = await res.json();
+      if (data && data.length > 0 && data[0].email === email && data[0].password === password) {      
+        return { id: data[0].id, email: data[0].email };
+      }
+
       return null;
-    });
+    } catch (error) {
+
+      console.error("\nError when checking user credentials: ", error);
+      return null;
+    }
   }
 }

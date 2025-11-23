@@ -16,8 +16,8 @@ import { RegisterFormComponent } from "./forms/register-form/register-form.compo
           <p><i>Find your forever home!</i></p>
         </header>
       <section class="login-section">
-        <app-login-form *ngIf="isRegistering" (switchToRegister)="toggleRegisterForm()">></app-login-form>
-        <app-register-form *ngIf="isRegistering" (switchToLogin)="toggleRegisterForm()">></app-register-form>
+        <app-login-form *ngIf="!isRegistering" (setRegisterForm)="toggleRegisterForm()">></app-login-form>
+        <app-register-form *ngIf="isRegistering" (setLoginForm)="toggleRegisterForm()">></app-register-form>
       </section>
     </main>
   `,
